@@ -1,0 +1,22 @@
+{
+  "name": "casso-api-gdt-demo",
+  "version": "2.1.0",
+  "description": "Casso Console - Demo hoá đơn điện tử GDT qua Proxy API",
+  "main": "server.js",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "mock": "node server.js --mock",
+    "tunnel": "node scripts/tunnel.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2"
+  },
+  "license": "MIT",
+  "author": "Casso"
+}

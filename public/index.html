@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Casso Console · Demo hoá đơn điện tử</title>
+  <meta name="description" content="Trải nghiệm dashboard hoá đơn đầu vào, đầu ra từ dữ liệu hoá đơn điện tử GDT qua Casso Console Open API, rồi kết nối dữ liệu thật trong 3 bước.">
+  <link rel="icon" href="assets/casso-logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#hero" aria-label="Casso Console">
+      <img src="assets/casso-logo.svg" alt="Casso" class="brand-logo">
+      <span class="brand-divider" aria-hidden="true"></span>
+      <span class="brand-product">Console <span>Open API Demo</span></span>
+    </a>
+    <nav class="topnav" aria-label="Mục lục">
+      <a href="#hero">Dashboard</a>
+      <a href="#how">Cách hoạt động</a>
+      <a href="#try">Kết nối dữ liệu thật</a>
+    </nav>
+    <a class="gh-link" id="githubLink" href="https://github.com" target="_blank" rel="noopener" aria-label="Mã nguồn demo trên GitHub">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      <span>Mã nguồn</span>
+    </a>
+  </header>
+
+  <main>
+    <!-- ============ HERO: dashboard tương tác đầy đủ ============ -->
+    <section class="hero" id="hero">
+      <div class="wrap">
+        <div class="hero-head">
+          <div>
+            <span class="eyebrow">Casso Console Open API · Hoá đơn điện tử</span>
+            <h1>Hoá đơn đầu vào, đầu ra của doanh nghiệp, tự đồng bộ từ cơ quan thuế</h1>
+            <p class="lead">Đây là dashboard đội của bạn xây được chỉ với vài lời gọi API. Thử lọc theo loại hoá đơn, trạng thái, thời gian: doanh thu, chi phí và thuế GTGT cập nhật ngay.</p>
+          </div>
+          <div class="hero-cta">
+            <a class="btn btn-primary btn-lg" href="#try">Kết nối dữ liệu thật
+              <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M19 12l-7 7-7-7"/></svg></a>
+            <a class="btn btn-ghost btn-lg" href="#how">Cách hoạt động</a>
+          </div>
+        </div>
+      </div>
+      <div class="hero-stage">
+        <div class="source-bar">
+          <div class="source-left">
+            <div class="seg" id="heroSource" role="tablist" aria-label="Nguồn dữ liệu dashboard">
+              <button class="seg-btn" role="tab" data-source="sample">Dữ liệu minh hoạ</button>
+              <button class="seg-btn" role="tab" data-source="real">Dữ liệu thật của bạn</button>
+            </div>
+            <span class="data-badge sample" id="heroBadge"></span>
+          </div>
+          <button class="btn btn-primary" id="btnQuickLink" data-quick-link>
+            <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 14h8"/></svg>
+            <span id="btnQuickLinkLabel">Thử với tài khoản demo · Sandbox</span>
+          </button>
+        </div>
+        <div class="app-frame" id="heroLedger"></div>
+      </div>
+    </section>
+
+    <!-- ============ CÁCH HOẠT ĐỘNG ============ -->
+    <section class="how" id="how">
+      <div class="wrap">
+        <div class="section-head">
+          <span class="eyebrow">Cách hoạt động</span>
+          <h2>Cơ quan thuế → Casso Console → ứng dụng của bạn</h2>
+          <p class="lead">Ứng dụng của bạn không cầm mật khẩu tài khoản thuế. Casso Console giữ kết nối và đồng bộ hoá đơn nền; ứng dụng chỉ nhận một token để đọc.</p>
+        </div>
+
+        <div class="flow-diagram" role="img" aria-label="Sơ đồ: cơ quan thuế đồng bộ hoá đơn về Casso Console, ứng dụng của bạn liên kết, lấy accessToken rồi gọi API hoá đơn">
+          <div class="node">
+            <span class="node-icon"><svg class="ic" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg></span>
+            <strong>Tổng cục Thuế</strong>
+            <span>Hoá đơn điện tử bán ra và mua vào</span>
+          </div>
+          <div class="edge"><span class="edge-step">Đồng bộ tự động</span><span class="edge-line" aria-hidden="true"></span></div>
+          <div class="node node-brand">
+            <span class="node-icon"><img src="assets/casso-logo.svg" alt=""></span>
+            <strong>Casso Console</strong>
+            <span>Giữ kết nối, lấy đủ chi tiết từng dòng hàng</span>
+          </div>
+          <div class="edge">
+            <span class="edge-step"><b>1</b> Liên kết tài khoản thuế</span>
+            <span class="edge-step"><b>2</b> Gọi API hoá đơn</span>
+            <span class="edge-step"><b>3</b> Nhận bảng kê</span>
+            <span class="edge-line edge-line-rev" aria-hidden="true"></span>
+          </div>
+          <div class="node">
+            <span class="node-icon"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 9h18M8 21h8M12 18v3"/></svg></span>
+            <strong>Ứng dụng của bạn</strong>
+            <span>ERP, kế toán, báo cáo quản trị</span>
+          </div>
+        </div>
+
+        <div class="value-grid">
+          <div class="value">
+            <span class="value-icon"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg></span>
+            <strong>Bảo mật</strong>
+            <p>Doanh nghiệp đăng nhập tài khoản thuế một lần trên Casso. Ứng dụng chỉ giữ token đọc dữ liệu, thu hồi được bất cứ lúc nào.</p>
+          </div>
+          <div class="value">
+            <span class="value-icon"><svg class="ic" viewBox="0 0 24 24"><path d="M12 2l9 5-9 5-9-5 9-5z"/><path d="M3 12l9 5 9-5M3 17l9 5 9-5"/></svg></span>
+            <strong>Đủ chi tiết để ghi sổ</strong>
+            <p>Người mua, người bán, mã số thuế, từng dòng hàng và thuế suất. Hoá đơn thay thế, điều chỉnh có tham chiếu tới hoá đơn gốc.</p>
+          </div>
+          <div class="value">
+            <span class="value-icon"><svg class="ic" viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/></svg></span>
+            <strong>Một lời gọi, không phân trang</strong>
+            <p>Một call trả hết hoá đơn trong khoảng ngày. Hoá đơn đã tính phí thì lấy lại miễn phí, gọi lại bao nhiêu lần cũng được.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 3 BƯỚC VỚI DỮ LIỆU THẬT ============ -->
+    <section class="try" id="try">
+      <div class="wrap">
+        <div class="section-head">
+          <span class="eyebrow">Kết nối dữ liệu thật · 3 bước</span>
+          <h2>Thay dữ liệu minh hoạ bằng hoá đơn thật của doanh nghiệp bạn</h2>
+          <p class="lead">Mỗi bước là đúng lời gọi API mà đội kỹ thuật sẽ viết. Bên phải là request và response thật để CTO đối chiếu.</p>
+        </div>
+
+        <!-- Bước 1: Liên kết tài khoản thuế -->
+        <article class="step-card" id="step1" data-step="1">
+          <header class="step-head">
+            <span class="step-num">1</span>
+            <div><h3>Liên kết tài khoản thuế</h3><p class="muted">Kết quả là <code>accessToken</code> cho kết nối hoá đơn điện tử. Tổ chức đã có kết nối thì dùng lại luôn, không mở Cas Link.</p></div>
+            <span class="step-status"></span>
+          </header>
+
+          <div class="step-intro">
+            <div class="field">
+              <span>Môi trường</span>
+              <div class="env-switch env-switch-lg" role="radiogroup" aria-label="Môi trường">
+                <button role="radio" class="env-option" data-env="sandbox"><span class="env-dot"></span>Sandbox · dữ liệu thử</button>
+                <button role="radio" class="env-option" data-env="production"><span class="env-dot"></span>Production · tài khoản thuế thật</button>
+              </div>
+            </div>
+            <div class="env-note" id="envNote"></div>
+          </div>
+
+          <div class="console-setup" id="consoleSetup">
+            <div class="console-setup-head">
+              <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+              <div>
+                <strong>Cấu hình trên Casso Console</strong>
+                <p class="muted">Vào <a href="https://console.casso.vn" target="_blank" rel="noopener">Casso Console ↗</a> → API Credential → chỉnh sửa, dán 2 URL dưới đây rồi Save. Cas Link trả <code>publicToken</code> về Redirect URI này.</p>
+              </div>
+            </div>
+            <div class="setup-rows">
+              <div class="setup-row">
+                <span class="setup-label">Authorized Redirect URIs</span>
+                <code id="callbackUrl">…</code>
+                <button class="btn btn-ghost btn-sm" data-copy-from="callbackUrl" data-copy-label="Redirect URI">Copy</button>
+              </div>
+              <div class="setup-row">
+                <span class="setup-label">Authorized Webhook URLs</span>
+                <code id="webhookUrl">…</code>
+                <button class="btn btn-ghost btn-sm" data-copy-from="webhookUrl" data-copy-label="Webhook URL">Copy</button>
+              </div>
+            </div>
+            <div class="inline-result warn" id="localhostWarn" hidden></div>
+          </div>
+
+          <div class="method-tabs" role="tablist">
+            <button class="method-tab" role="tab" data-method="claim">
+              <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg>
+              <span><strong>Liên kết bằng link_id</strong><small>Đã liên kết trên Casso Console</small></span>
+            </button>
+            <button class="method-tab" role="tab" data-method="caslink">
+              <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 14h8"/></svg>
+              <span><strong>Liên kết bằng Cas Link</strong><small>Khách đăng nhập tài khoản thuế ngay trong app</small></span>
+            </button>
+          </div>
+
+          <!-- Tab 1: link_id -->
+          <div class="step-body" id="panelClaim">
+            <div class="step-form">
+              <div class="cred-fields" data-cred-group></div>
+              <label class="field">
+                <span>link_id <em>— copy trên thẻ kết nối ở <a href="https://console.casso.vn" target="_blank" rel="noopener">Casso Console ↗</a></em></span>
+                <input type="text" id="claimLinkId" placeholder="lnk_..." autocomplete="off" spellcheck="false">
+              </label>
+              <button class="btn btn-primary" id="btnClaim">Lấy accessToken</button>
+              <div class="inline-result" id="claimResult" hidden></div>
+            </div>
+            <div class="api-panel" id="apiClaim"></div>
+          </div>
+
+          <!-- Tab 2: widget Cas Link -->
+          <div class="step-body" id="panelCasLink" hidden>
+            <div class="step-form">
+              <div class="cred-fields" data-cred-group></div>
+              <ol class="flow">
+                <li class="flow-step" data-lstep="1">
+                  <div class="flow-head"><span class="flow-num">a</span><h4>Tạo phiên liên kết (grant/token)</h4></div>
+                  <div class="flow-body">
+                    <button class="btn btn-primary" id="btnLink">Liên kết tài khoản thuế</button>
+                    <p class="hint">Một tổ chức chỉ có một kết nối hoá đơn điện tử: <code>grant/token</code> trả <code>link_id</code> khi tổ chức đã có kết nối → tự dùng lại bằng <code>grant/claim</code>, không mở Cas Link.</p>
+                  </div>
+                </li>
+                <li class="flow-step" data-lstep="2">
+                  <div class="flow-head"><span class="flow-num">b</span><h4>Đăng nhập tài khoản thuế trong Cas Link</h4></div>
+                  <div class="flow-body">
+                    <p class="hint">Cas Link mở ngay trên trang này và trả publicToken qua <b>Authorized Redirect URIs</b> phía trên.</p>
+                    <details class="manual-token">
+                      <summary>Đã có publicToken? Dán vào đây</summary>
+                      <div class="manual-row">
+                        <input type="text" id="manualPublicToken" placeholder="pub_..." autocomplete="off" spellcheck="false" aria-label="publicToken">
+                        <button class="btn btn-ghost btn-sm" id="btnUseManualPublic">Dùng</button>
+                      </div>
+                    </details>
+                  </div>
+                </li>
+                <li class="flow-step" data-lstep="3">
+                  <div class="flow-head"><span class="flow-num">c</span><h4>Đổi publicToken lấy accessToken, xác thực tổ chức</h4></div>
+                </li>
+              </ol>
+              <div class="inline-result" id="linkResult" hidden></div>
+            </div>
+            <div class="api-panel" id="apiCasLink"></div>
+          </div>
+
+          <div class="step-foot" id="tokenResult" hidden></div>
+        </article>
+
+        <!-- Bước 2: Gọi API -->
+        <article class="step-card" id="step2" data-step="2">
+          <header class="step-head">
+            <span class="step-num">2</span>
+            <div><h3>Gọi API lấy hoá đơn</h3><p class="muted">Kiểm tra <code>sync-status</code> (miễn phí) rồi lấy hoá đơn đã đồng bộ qua <code>invoices/stored</code>.</p></div>
+            <span class="step-status"></span>
+          </header>
+          <div class="step-body">
+            <div class="step-form">
+              <label class="field">
+                <span>accessToken <em>(Authorization)</em></span>
+                <input type="text" id="invToken" placeholder="Tự điền sau bước 1, hoặc dán token có sẵn" autocomplete="off" spellcheck="false">
+              </label>
+              <div class="cred-fields" data-cred-group></div>
+              <div class="field">
+                <span>Khoảng thời gian <em>(fromDate / toDate, tối đa 12 tháng gần nhất)</em></span>
+                <div class="quick-ranges" id="quickRanges">
+                  <button data-months="1">Tháng này</button>
+                  <button data-months="3">3 tháng</button>
+                  <button data-months="6">6 tháng</button>
+                  <button data-months="12">12 tháng</button>
+                </div>
+                <div class="field-row">
+                  <label class="field"><span class="sr-only">Từ ngày</span><input type="date" id="invFrom" aria-label="Từ ngày"></label>
+                  <label class="field"><span class="sr-only">Đến ngày</span><input type="date" id="invTo" aria-label="Đến ngày"></label>
+                </div>
+              </div>
+              <label class="field">
+                <span>Loại hoá đơn <em>(invoiceType, tuỳ chọn)</em></span>
+                <select id="invType">
+                  <option value="">Tất cả</option>
+                  <option value="sold">Bán ra (sold)</option>
+                  <option value="purchase">Mua vào (purchase)</option>
+                </select>
+              </label>
+              <button class="btn btn-primary btn-lg" id="btnFetch">Gọi API</button>
+              <div class="inline-result" id="invResult" hidden></div>
+            </div>
+            <div class="api-panel" id="apiInv"></div>
+          </div>
+        </article>
+
+        <!-- Bước 3: Bảng kê -->
+        <article class="step-card" id="step3" data-step="3">
+          <header class="step-head">
+            <span class="step-num">3</span>
+            <div><h3>Bảng kê hoá đơn</h3><p class="muted" id="statementMeta">Response của API, trình bày thành bảng kê để kế toán dùng ngay.</p></div>
+            <button class="btn btn-primary" id="btnOpenDashboard" disabled>
+              <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>
+              Xem dashboard
+            </button>
+          </header>
+          <div class="statement-wrap">
+            <div class="app-frame" id="statementLedger">
+              <div class="statement-empty">Bảng kê hiện ở đây sau khi gọi API thành công ở bước 2.</div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============ DASHBOARD DỮ LIỆU THẬT ============ -->
+  <div class="result-overlay" id="resultOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="resultTitle">
+    <div class="result-bar">
+      <div class="result-bar-left">
+        <span class="data-badge real" id="resultBadge"></span>
+        <div>
+          <h2 id="resultTitle">Dashboard hoá đơn · dữ liệu thật</h2>
+          <p class="muted" id="resultMeta"></p>
+        </div>
+      </div>
+      <div class="result-bar-actions">
+        <button class="btn btn-ghost" id="btnRefetch">Gọi lại với tham số khác</button>
+        <button class="btn btn-ghost" id="btnCloseResult" aria-label="Đóng dashboard">
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg> Đóng
+        </button>
+      </div>
+    </div>
+    <div class="result-body">
+      <div class="app-frame app-frame-full" id="fullLedger"></div>
+    </div>
+  </div>
+
+  <!-- ============ LIÊN KẾT NHANH TỪ HERO ============ -->
+  <!-- div overlay (z-index 90), không dùng <dialog>: iframe Cas Link phải luôn nằm trên. -->
+  <div class="ql-overlay" id="quickLinkModal" hidden role="dialog" aria-modal="true" aria-labelledby="qlTitle">
+    <div class="ql-card">
+      <header class="ql-head">
+        <div>
+          <span class="env-pill" id="qlEnv"></span>
+          <h2 id="qlTitle">Liên kết tài khoản thuế</h2>
+          <p class="muted" id="qlSubtitle"></p>
+        </div>
+        <button class="icon-btn" data-qlclose aria-label="Đóng">
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </header>
+
+      <div class="ql-body">
+        <section class="ql-sec" id="qlSecKeys">
+          <h3><span class="ql-num">1</span>Key ứng dụng</h3>
+          <div class="cred-fields" data-cred-group></div>
+        </section>
+
+        <section class="ql-sec" id="qlSecTax">
+          <h3><span class="ql-num">2</span>Tài khoản thuế</h3>
+          <div class="ql-tax">
+            <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg>
+            <div><b>Hoá đơn điện tử · Tổng cục Thuế</b>
+              <span class="muted" id="qlTaxNote"></span></div>
+          </div>
+        </section>
+
+        <ol class="ql-progress" id="qlProgress" hidden>
+          <li data-qlstep="conn">Kiểm tra kết nối sẵn có của tổ chức</li>
+          <li data-qlstep="token">Tạo phiên liên kết <code>grant/token</code></li>
+          <li data-qlstep="login">Đăng nhập tài khoản thuế trong Cas Link</li>
+          <li data-qlstep="exchange">Lấy accessToken <code>grant/exchange</code> → <code>identity</code></li>
+          <li data-qlstep="fetch">Lấy hoá đơn <code>sync-status</code> → <code>invoices/stored</code></li>
+        </ol>
+
+        <!-- Giai đoạn 2: chỉ hiện sau khi liên kết thành công -->
+        <section class="ql-sec ql-sec-range" id="qlSecRange" hidden>
+          <div class="ql-linked" id="qlLinked"></div>
+          <h3><span class="ql-num">3</span>Chọn khoảng thời gian lấy hoá đơn</h3>
+          <div class="quick-ranges" id="qlRanges">
+            <button data-qlmonths="1">Tháng này</button>
+            <button data-qlmonths="3">3 tháng</button>
+            <button data-qlmonths="6">6 tháng</button>
+            <button data-qlmonths="12">12 tháng</button>
+          </div>
+          <div class="field-row">
+            <label class="field"><span>Từ ngày</span><input type="date" id="qlFrom"></label>
+            <label class="field"><span>Đến ngày</span><input type="date" id="qlTo"></label>
+          </div>
+          <label class="field">
+            <span>Loại hoá đơn</span>
+            <select id="qlType">
+              <option value="">Tất cả (bán ra và mua vào)</option>
+              <option value="sold">Bán ra</option>
+              <option value="purchase">Mua vào</option>
+            </select>
+          </label>
+          <p class="hint">Dữ liệu đã đồng bộ giữ 12 tháng. Một lời gọi trả hết hoá đơn trong khoảng, hoá đơn đã tính phí thì lấy lại miễn phí.</p>
+        </section>
+        <div class="inline-result" id="qlResult" hidden></div>
+        <div class="inline-result warn" id="qlLocalWarn" hidden></div>
+      </div>
+
+      <footer class="ql-foot">
+        <button class="btn btn-link ql-relink" id="qlRelink" data-qlrelink hidden>← Liên kết lại</button>
+        <button class="btn btn-ghost" data-qlclose>Huỷ</button>
+        <button class="btn btn-primary" id="qlStart">Liên kết tài khoản thuế</button>
+      </footer>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
