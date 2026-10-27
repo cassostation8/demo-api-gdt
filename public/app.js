@@ -1889,6 +1889,7 @@ function runQlLink() {
 }
 
 function qlAwaitLink(pending) {
+  const btn = $('qlStart')
   pending.then((fs) => {
     state.qlLinking = false
     setBusy(btn, false)
