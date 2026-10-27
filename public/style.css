@@ -973,3 +973,6 @@ dialog.console-picker::backdrop { background: rgba(16, 24, 40, 0.48); }
 .prod-loading-card h2 { font-size: 17px; margin: 0 0 6px; }
 .prod-loading-card p { font-size: 13.5px; color: var(--text-muted); margin: 0; }
 .prod-loading-card .btn { margin-top: 16px; }
+
+/* Liên kết nhanh: chọn cách liên kết (account_id / Cas Link) */
+.ql-mode { margin-bottom: 12px; }

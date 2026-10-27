@@ -338,6 +338,15 @@
 
         <section class="ql-sec" id="qlSecTax">
           <h3><span class="ql-num">2</span>Tài khoản thuế</h3>
+          <div class="seg ql-mode" role="radiogroup" aria-label="Cách liên kết">
+            <button class="seg-btn" role="radio" data-qlmode="account">Dùng account_id có sẵn</button>
+            <button class="seg-btn active" role="radio" data-qlmode="cas">Liên kết mới bằng Cas Link</button>
+          </div>
+          <div id="qlAccountBox" hidden>
+            <label class="field"><span>account_id <em>— copy trên thẻ kết nối ở Casso Console</em></span>
+              <input type="text" id="qlAccountId" placeholder="account_id của kết nối hoá đơn đã có" autocomplete="off" spellcheck="false"></label>
+            <p class="hint">Không mở Cas Link. Lấy accessToken trực tiếp bằng <code>grant/claim</code>.</p>
+          </div>
           <div class="ql-tax">
             <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg>
             <div><b>Hoá đơn điện tử · Tổng cục Thuế</b>

@@ -1233,177 +1233,8 @@ function renderCredFields() {
             <button type="button" class="secret-toggle" aria-label="Hiện / ẩn secret">Hiện</button>
           </span></label>
       </div>
-      ${state.config?.mock ? '' : '<button type="button" class="btn btn-secondary btn-sm" data-console-picker>Chọn credential và liên kết từ Casso Console</button>'}
       <p class="hint">Key của tổ chức ${envName}, lấy ở Casso Console → API Credential. Chỉ gửi tới server demo để gọi Casso, không lưu lại.</p>`
   })
-}
-
-let consolePickerCredential = null
-let consolePickerConnection = null
-let consolePickerEnvironment = 'sandbox'
-let consolePickerLoading = false
-
-async function portalGet(path) {
-  const response = await fetch(path, { credentials: 'include', headers: { Accept: 'application/json' } })
-  let payload
-  try {
-    payload = await response.json()
-  } catch {
-    throw new Error('Không đọc được API Casso Console. Hãy mở demo từ Console cùng domain hoặc nhập credential thủ công.')
-  }
-  if (!response.ok) {
-    const error = new Error(payload?.error?.errorMessage || `Không thể đọc dữ liệu Console (HTTP ${response.status}).`)
-    error.status = response.status
-    throw error
-  }
-  return payload
-}
-
-// Màn hình chờ khi đang lấy dữ liệu thật sau "Dùng lựa chọn"; gọi lại để đổi dòng trạng thái, hideProdLoading() để tắt.
-function showProdLoading(detail) {
-  let el = $('prodLoading')
-  if (!el) {
-    el = document.createElement('div')
-    el.id = 'prodLoading'
-    el.className = 'prod-loading'
-    el.setAttribute('role', 'alertdialog')
-    el.setAttribute('aria-busy', 'true')
-    el.innerHTML = `
-      <div class="prod-loading-card">
-        <div class="prod-loading-spinner" aria-hidden="true"></div>
-        <h2>Đang lấy dữ liệu thật cho bạn</h2>
-        <p id="prodLoadingDetail" role="status" aria-live="polite"></p>
-        <button type="button" class="btn btn-ghost btn-sm" data-prod-loading-hide>Ẩn, tiếp tục chạy nền</button>
-      </div>`
-    el.querySelector('[data-prod-loading-hide]').onclick = hideProdLoading
-    document.body.append(el)
-  }
-  el.querySelector('#prodLoadingDetail').textContent = detail
-  el.hidden = false
-}
-
-function hideProdLoading() {
-  const el = $('prodLoading')
-  if (el) el.hidden = true
-}
-
-function ensureConsolePicker() {
-  let dialog = $('consolePicker')
-  if (dialog) return dialog
-  dialog = document.createElement('dialog')
-  dialog.id = 'consolePicker'
-  dialog.className = 'console-picker'
-  dialog.setAttribute('aria-labelledby', 'consolePickerTitle')
-  dialog.innerHTML = `
-    <h2 id="consolePickerTitle">Chọn dữ liệu từ Casso Console</h2>
-    <p class="console-picker-copy">Dùng credential và kết nối thuế trong tổ chức hiện tại. Secret chỉ được lấy sau khi bạn chọn credential.</p>
-    <p id="consolePickerStatus" class="console-picker-status" role="status" aria-live="polite">Đang tải phiên Console…</p>
-    <label class="field"><span>Credential</span><select id="consolePickerCredential" disabled><option value="">Chọn credential</option></select></label>
-    <label class="field"><span>Kết nối tài khoản thuế</span><select id="consolePickerConnection" disabled><option value="">Chọn kết nối</option></select></label>
-    <div class="console-picker-actions">
-      <button type="button" class="btn btn-ghost" data-console-picker-close>Nhập thủ công</button>
-      <button type="button" class="btn btn-primary" id="consolePickerApply" disabled>Dùng lựa chọn</button>
-    </div>`
-  dialog.addEventListener('close', () => {
-    consolePickerCredential = null
-    consolePickerConnection = null
-  })
-  document.body.append(dialog)
-  return dialog
-}
-
-function updateConsolePickerApply(dialog) {
-  dialog.querySelector('#consolePickerApply').disabled = !consolePickerCredential?.secret_key || !consolePickerConnection
-}
-
-async function openConsolePicker() {
-  if (consolePickerLoading) return
-  consolePickerLoading = true
-  consolePickerCredential = null
-  consolePickerConnection = null
-  const dialog = ensureConsolePicker()
-  const status = dialog.querySelector('#consolePickerStatus')
-  const credentialSelect = dialog.querySelector('#consolePickerCredential')
-  const connectionSelect = dialog.querySelector('#consolePickerConnection')
-  status.textContent = 'Đang tải phiên Console…'
-  credentialSelect.disabled = true
-  connectionSelect.disabled = true
-  dialog.querySelector('#consolePickerApply').disabled = true
-  if (!dialog.open) dialog.showModal()
-
-  try {
-    const [me, credentialData, connectionData] = await Promise.all([
-      portalGet('/portal/me'),
-      portalGet('/portal/credentials'),
-      portalGet('/portal/org-grants'),
-    ])
-    if (!me.org) throw new Error('Phiên hiện tại chưa có tổ chức trong Casso Console.')
-    consolePickerEnvironment = me.org.environment === 'production' ? 'production' : 'sandbox'
-
-    const credentials = (credentialData.credentials || []).filter((credential) => credential.allowed_services?.includes('gdt_invoices'))
-    const connections = (connectionData.connections || []).filter((connection) => connection.service === 'gdt_connect' && connection.account_id)
-    credentialSelect.onchange = async () => {
-      consolePickerCredential = null
-      updateConsolePickerApply(dialog)
-      const clientId = credentialSelect.value
-      if (!clientId) return
-      status.textContent = 'Đang kiểm tra quyền xem secret của credential…'
-      try {
-        const result = await portalGet(`/portal/credentials/${encodeURIComponent(clientId)}`)
-        if (!dialog.open || credentialSelect.value !== clientId) return
-        consolePickerCredential = result.credential
-        status.textContent = consolePickerCredential.secret_key
-          ? 'Chọn kết nối tài khoản thuế để tiếp tục.'
-          : 'Vai trò hiện tại không được xem secret key. Hãy dùng credential khác hoặc nhập thủ công.'
-      } catch (error) {
-        if (!dialog.open || credentialSelect.value !== clientId) return
-        status.textContent = error.message
-      }
-      updateConsolePickerApply(dialog)
-    }
-    connectionSelect.onchange = () => {
-      consolePickerConnection = connections.find((connection) => connection.account_id === connectionSelect.value) || null
-      updateConsolePickerApply(dialog)
-    }
-    credentialSelect.innerHTML = '<option value="">Chọn credential</option>' + credentials.map((credential) =>
-      `<option value="${escapeHtml(credential.client_id)}">${escapeHtml(credential.name)} · ${escapeHtml(credential.client_id)}</option>`,
-    ).join('')
-    connectionSelect.innerHTML = '<option value="">Chọn kết nối tài khoản thuế</option>' + connections.map((connection) => {
-      const label = connection.label || connection.account_id
-      return `<option value="${escapeHtml(connection.account_id)}">${escapeHtml(label)} · ${escapeHtml(connection.account_id)}</option>`
-    }).join('')
-    credentialSelect.disabled = !credentials.length
-    connectionSelect.disabled = !connections.length
-
-    if (!credentials.length) status.textContent = 'Không có credential được cấp quyền GDT Invoice. Bạn vẫn có thể nhập thủ công.'
-    else if (!connections.length) status.textContent = 'Tổ chức chưa có kết nối tài khoản thuế khả dụng. Bạn vẫn có thể nhập thủ công.'
-    else status.textContent = 'Chọn credential và kết nối đã có trong tổ chức.'
-    dialog.querySelector('#consolePickerApply').onclick = () => {
-      if (!consolePickerCredential?.secret_key || !consolePickerConnection) return
-      const hasProgress = state.cred.clientId || state.accessToken || state.real || Object.keys(state.results).length || val('claimLinkId') || val('invToken')
-      if (hasProgress && !confirm('Dùng lựa chọn mới sẽ thay credential và xoá token/kết quả hiện tại. Tiếp tục?')) return
-      resetFlow()
-      state.env = consolePickerEnvironment
-      sessionSet('casso_env', state.env)
-      state.cred = { clientId: consolePickerCredential.client_id, secretKey: consolePickerCredential.secret_key }
-      renderEnv()
-      $('claimLinkId').value = consolePickerConnection.account_id
-      setMethod('claim')
-      renderApiPanel('apiClaim')
-      dialog.close()
-      toast('Đã chọn từ Casso Console — đang lấy dữ liệu thật…', 'success')
-      // Có accessToken (onLinked) thì tự lấy hoá đơn và đổ vào dashboard.
-      state.autoLoad = true
-      showProdLoading('Đang lấy accessToken cho kết nối tài khoản thuế…')
-      doClaim()
-    }
-  } catch (error) {
-    status.textContent = error.message || 'Không thể tải dữ liệu từ Casso Console. Bạn vẫn có thể nhập thủ công.'
-    credentialSelect.disabled = true
-    connectionSelect.disabled = true
-  } finally {
-    consolePickerLoading = false
-  }
 }
 
 // ------------------------------------------------------------------
@@ -1585,7 +1416,6 @@ function setupLinkFlow() {
     client,
     onLinked: ({ accessToken, identity }) => {
       onAccessToken(accessToken, identity)
-      if (state.autoLoad) void autoLoadFromConsole()
     },
     onUnlinked: () => {
       state.accessToken = ''
@@ -1595,11 +1425,6 @@ function setupLinkFlow() {
     }
   })
   state.flow.subscribe((fs) => {
-    if (['error', 'needs-relogin'].includes(fs.status) && state.autoLoad) {
-      state.autoLoad = false
-      hideProdLoading()
-    }
-    if (state.autoLoad && fs.status === 'identity-pending') showProdLoading('Casso đang xác minh tổ chức, tự kiểm tra lại sau mỗi 15 giây…')
     renderLinkFlow(fs)
     if (state.qlLinking) qlOnFlow(fs)
   })
@@ -1661,17 +1486,6 @@ function doClaim() {
   const linkId = val('claimLinkId')
   if (!linkId) return toast('Dán link_id từ Casso Console trước', 'error')
   state.flow.claim(linkId)
-}
-
-// Sau khi chọn từ Console: invoices/stored 3 tháng → dashboard dữ liệu thật ở hero.
-async function autoLoadFromConsole() {
-  state.autoLoad = false
-  setRange(3)
-  showProdLoading('Đang tải hoá đơn 3 tháng gần nhất…')
-  const result = await doFetch({ scroll: false })
-  hideProdLoading()
-  if (!result.ok) return scrollToStep(2)
-  $('hero').scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
 function doLink() {
@@ -1905,11 +1719,10 @@ function openQuickLink() {
     ? 'Dùng key của <b>tổ chức sandbox</b>. Trong Cas Link, đăng nhập bằng tài khoản thuế thử nghiệm của tổ chức sandbox.'
     : 'Dùng key của <b>tổ chức thật</b>. Trong Cas Link, đăng nhập bằng tài khoản thuế doanh nghiệp (cổng hoá đơn điện tử).'
   $('qlTaxNote').innerHTML = 'Tổ chức đã có kết nối hoá đơn điện tử thì dùng lại luôn, không mở Cas Link. Nếu chưa, Cas Link sẽ mở ngay trên trang để đăng nhập tài khoản thuế.'
-  const localWarn = $('localhostWarn')
-  $('qlLocalWarn').hidden = localWarn.hidden
-  $('qlLocalWarn').innerHTML = localWarn.innerHTML
+  $('qlLocalWarn').innerHTML = $('localhostWarn').innerHTML
   // Đã có accessToken (từ bước 1 hoặc lần trước) thì vào thẳng bước chọn khoảng thời gian.
   setQlPhase(state.accessToken ? 'range' : 'link')
+  setQlMode('cas')
   if (state.accessToken) {
     qlShowLinked(state.flow.getState(), 'Đang dùng kết nối đã liên kết trước đó. Muốn đổi kết nối thì bấm "← Liên kết lại".')
     QL_STEPS.slice(0, 4).forEach((k) => qlStep(k, 'done'))
@@ -1935,7 +1748,8 @@ function setQlPhase(phase) {
   $('qlSecTax').hidden = !linking
   $('qlSecRange').hidden = linking
   $('qlRelink').hidden = linking
-  $('qlStart').textContent = linking ? qlLinkLabel() : 'Lấy hoá đơn'
+  $('qlStart').textContent = linking ? qlStartLabel() : 'Lấy hoá đơn'
+  if (!linking) $('qlLocalWarn').hidden = true
   $('qlResult').hidden = true
   if (linking) {
     QL_STEPS.forEach((k) => qlStep(k, ''))
@@ -1949,6 +1763,25 @@ function setQlPhase(phase) {
 
 function qlLinkLabel() {
   return state.flow?.getState().status === 'needs-relogin' ? 'Đăng nhập lại tài khoản thuế' : 'Liên kết tài khoản thuế'
+}
+
+function qlStartLabel() {
+  return state.qlMode === 'account' ? 'Dùng account_id này' : qlLinkLabel()
+}
+
+// Hai cách trong hộp thoại: 'account' = account_id có sẵn (grant/claim, không mở Cas Link, không cần localhost) | 'cas' = liên kết mới qua Cas Link.
+function setQlMode(mode) {
+  state.qlMode = mode
+  document.querySelectorAll('[data-qlmode]').forEach((b) => {
+    const active = b.dataset.qlmode === mode
+    b.classList.toggle('active', active)
+    b.setAttribute('aria-checked', active)
+  })
+  const account = mode === 'account'
+  $('qlAccountBox').hidden = !account
+  document.querySelector('#qlSecTax .ql-tax').hidden = account
+  $('qlLocalWarn').hidden = account || state.qlPhase !== 'link' || $('localhostWarn').hidden
+  if (state.qlPhase === 'link') $('qlStart').textContent = qlStartLabel()
 }
 
 function setQlRange(months) {
@@ -2016,7 +1849,25 @@ function qlOnFlow(fs) {
 }
 
 function runQuickLink() {
-  return state.qlPhase === 'range' ? runQlFetch() : runQlLink()
+  if (state.qlPhase === 'range') return runQlFetch()
+  return state.qlMode === 'account' ? runQlAccount() : runQlLink()
+}
+
+// Cách account_id: grant/claim trực tiếp bằng account_id của kết nối đã có (không tạo grant/token, không mở Cas Link).
+function runQlAccount() {
+  if (!hasCred()) return promptCred()
+  const linkId = val('qlAccountId')
+  if (!linkId) return toast('Nhập account_id trước', 'error')
+  const btn = $('qlStart')
+  QL_STEPS.forEach((k) => qlStep(k, ''))
+  $('qlResult').hidden = true
+  state.qlLinking = true
+  qlStep('conn', 'skip', 'Dùng account_id nhập tay')
+  qlStep('token', 'skip', 'Bỏ qua — không tạo grant/token')
+  qlStep('login', 'skip', 'Bỏ qua — không mở Cas Link')
+  qlStep('exchange', 'run', 'grant/claim')
+  setBusy(btn, true, 'Đang liên kết…')
+  qlAwaitLink(state.flow.claim(linkId))
 }
 
 // Giai đoạn 1: liên kết (claim nếu tổ chức đã có kết nối, không thì mở Cas Link).
@@ -2034,6 +1885,10 @@ function runQlLink() {
     qlStep('conn', 'skip', 'Đăng nhập lại cùng kết nối')
     qlStep('token', 'run')
   }
+  qlAwaitLink(pending)
+}
+
+function qlAwaitLink(pending) {
   pending.then((fs) => {
     state.qlLinking = false
     setBusy(btn, false)
@@ -2055,7 +1910,7 @@ function runQlLink() {
     qlStep(failed, 'err')
     const err = fs.error || { code: 'INTERNAL_ERROR', message: 'Liên kết chưa hoàn tất.' }
     qlShowError(`${ICONS.alert}<span><b>${escapeHtml(err.code || 'Lỗi')}</b> — ${escapeHtml(ERROR_HINTS[err.code] || err.message)}</span>`)
-    $('qlStart').textContent = qlLinkLabel()
+    $('qlStart').textContent = qlStartLabel()
   })
 }
 
@@ -2098,8 +1953,6 @@ document.addEventListener('click', (e) => {
   const t = e.target.closest('button, a')
   if (!t) return
 
-  if (t.hasAttribute('data-console-picker')) return void openConsolePicker()
-  if (t.hasAttribute('data-console-picker-close')) return $('consolePicker')?.close()
   if (t.dataset.copy !== undefined) return copyText(t.dataset.copy, t.dataset.copyLabel || 'giá trị')
   if (t.dataset.copyFrom) return copyText($(t.dataset.copyFrom).textContent, t.dataset.copyLabel || 'giá trị')
   if (t.dataset.curl) return copyText(curlFor(t.dataset.curl), 'cURL')
@@ -2118,6 +1971,7 @@ document.addEventListener('click', (e) => {
   if (t.dataset.quickLink !== undefined) return openQuickLink()
   if (t.dataset.qlclose !== undefined) return closeQuickLink()
   if (t.dataset.qlrelink !== undefined) return setQlPhase('link')
+  if (t.dataset.qlmode) return setQlMode(t.dataset.qlmode)
   if (t.dataset.qlmonths) return setQlRange(Number(t.dataset.qlmonths))
   if (t.dataset.method) return setMethod(t.dataset.method)
   if (t.dataset.unlink !== undefined) return state.flow.unlink()
@@ -2195,7 +2049,6 @@ async function init() {
   setMethod('claim')
   Object.keys(PANELS).forEach(renderApiPanel)
   renderProgress()
-  if (!state.config?.mock && !new URLSearchParams(window.location.search).has('publicToken')) void openConsolePicker()
 }
 
 init()
